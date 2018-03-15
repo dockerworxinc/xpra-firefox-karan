@@ -1,0 +1,29 @@
+FROM ubuntu:14.04
+EXPOSE 22
+#ENV http_proxy "http://web-proxy.houston.hpe.com:8080"
+RUN apt-get update && apt-get install -y firefox
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server
+
+# Replace 1000 with your user / group id
+RUN export uid=1000 gid=1000 && \
+    mkdir -p /home/user && \
+    echo "user:x:${uid}:${gid}:user,,,:/home/user:/bin/bash" >> /etc/passwd && \
+    echo "user:x:${uid}:" >> /etc/group && \
+    echo "user ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/user && \
+    chmod 0440 /etc/sudoers.d/user && \
+    chown ${uid}:${gid} -R /home/user
+# Create OpenSSH privilege separation directory
+RUN mkdir /var/run/sshd
+#RUN adduser --disabled-password --gecos "User" --uid 1000 user
+RUN mkdir /home/user/.ssh/
+
+VOLUME /home/user
+
+#ENV DISPLAY=:100
+
+USER user
+ENV HOME /home/user
+
+CMD mkdir -p /home/user/.ssh/ && sudo chown -R user:user /home/user/ \
+    && /usr/sbin/sshd && rm -f /tmp/.X100-lock \
+    && /usr/bin/firefox
